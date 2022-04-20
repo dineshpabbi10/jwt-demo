@@ -54,9 +54,12 @@ const authMiddleware = (req,res,next)=>{
 
     // verify token signature and decode information
     jwt.verify(auth_token,config.AUTH_TOKEN_SECRET,(err,decoded)=>{
+        console.log(auth_token);
+        console.log(decoded);
+        console.log(err);
         // token signed with wrong signature or tampered token
         if(err){
-            res.status(401).json({message:"Not authenticated"});
+            res.status(401).json({message:"Token is invalid"});
         }else{
             // token verified succesfully , add user info to req
             req.username = decoded.username;
@@ -83,21 +86,21 @@ app.post("/login",(req,res,next)=>{
         res.status(401).json({message:"User not found"});
     }
     // user found but password incorrect
-    else if (user.password !== password){
+    else if (user[0].password !== password){
         res.status(401).json({message:"Password incorrect"});
     }
     // user found and password incorrect
     else{
         // generate auth_token which expires in 20 seconds
         let auth_token  = jwt.sign({
-            username : user.username,
-            roles : user.roles
-        },config.AUTH_TOKEN_SECRET,{expiresIn:'20'});
+            username : user[0].username,
+            roles : user[0].roles
+        },config.AUTH_TOKEN_SECRET,{expiresIn:'20000'});
 
         // generate refresh_token which never expires
         let refresh_token = jwt.sign({
-            username : user.username,
-            roles : user.roles,
+            username : user[0].username,
+            roles : user[0].roles,
         },config.REFRESH_TOKEN_SECRET)
 
         // add token generated for particular username to hashmap
@@ -155,7 +158,7 @@ app.post("/refreshtoken",(req,res,next)=>{
                 let auth_token = jwt.sign({
                     username : decoded.username,
                     roles : decoded.roles
-                },config.AUTH_TOKEN_SECRET,{expiresIn:'20'});
+                },config.AUTH_TOKEN_SECRET,{expiresIn:'20000'});
 
                 res.status(201).json({
                     refresh_token,
